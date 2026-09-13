@@ -1,0 +1,1 @@
+{"name":"pixopt-codec-build","private":true,"type":"module","version":"1.0.0","dependencies":{"@jsquash/jpeg":"^1.6.0","@jsquash/oxipng":"^2.3.0","@jsquash/webp":"^1.5.0","esbuild":"^0.24.2","jszip":"^3.10.2"}}
