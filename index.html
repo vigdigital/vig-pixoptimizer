@@ -244,12 +244,10 @@ try{
 }catch(e){}
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 
-/* ---------- Counter "Đã xử lý N ảnh" (luỹ kế trên máy này) ---------- */
-let processedTotal=0;
-try{processedTotal=parseInt(localStorage.getItem('pixopt_total'),10)||0;}catch(e){}
-function renderProcessed(){const el=$('#statProcessed');if(!el)return;if(processedTotal>0){$('#statNum').textContent=processedTotal.toLocaleString('vi-VN');el.hidden=false;}else{el.hidden=true;}}
-function bumpProcessed(n){processedTotal+=n;try{localStorage.setItem('pixopt_total',processedTotal);}catch(e){}renderProcessed();}
-renderProcessed();
+/* ---------- Counter "Đã xử lý N ảnh" (toàn cục — count.php + count.txt) ---------- */
+function showCount(n){const el=$('#statProcessed');if(!el||typeof n!=='number')return;if(n>0){$('#statNum').textContent=n.toLocaleString('vi-VN');el.hidden=false;}}
+(async function(){try{const r=await fetch('count.php',{cache:'no-store'});showCount((await r.json()).count);}catch(e){}})();
+async function countHit(n){try{const r=await fetch('count.php?hit='+n,{cache:'no-store'});showCount((await r.json()).count);}catch(e){}}
 
 /* ---------- Limits (chống quá tải trình duyệt) ---------- */
 const LIMITS={files:20,perFile:25*1024*1024,total:100*1024*1024,megapixel:50*1e6};
@@ -352,6 +350,7 @@ function accept(files){
   if(!okList.length)return;
   $('#controls').classList.add('show');
   okList.forEach(addItem);
+  countHit(okList.length);   // thả ảnh vào là đếm (toàn cục)
   runQueue();
 }
 
@@ -386,7 +385,6 @@ async function process(it){
   try{
     const r=await optimizeOne(it.file,opts());
     it.result=r;
-    if(!it.counted){it.counted=true;bumpProcessed(1);}   // đếm 1 lần/ảnh, không tính lại khi "Nén lại"
     if(it.url)URL.revokeObjectURL(it.url);
     it.blob=new Blob([r.best.buf],{type:r.best.type});
     it.url=URL.createObjectURL(it.blob);
