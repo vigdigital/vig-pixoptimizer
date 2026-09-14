@@ -517,7 +517,7 @@ drop.onclick=()=>input.click();
 input.onchange=()=>{accept(input.files);input.value='';};
 ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
 ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();if(ev==='drop'){accept(e.dataTransfer.files);}drop.classList.remove('over');}));
-$('#sampleBtn').onclick=async()=>{try{const r=await fetch('assets/sample.jpg');const b=await r.blob();accept([new File([b],'anh-mau.jpg',{type:'image/jpeg'})]);}catch(e){showNotice('Không tải được ảnh mẫu.');}};
+$('#sampleBtn').onclick=async()=>{try{const r=await fetch('assets/sample.jpg?v=2');const b=await r.blob();accept([new File([b],'anh-mau.jpg',{type:'image/jpeg'})]);}catch(e){showNotice('Không tải được ảnh mẫu.');}};
 </script>
 </body>
 </html>
