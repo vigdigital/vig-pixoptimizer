@@ -48,6 +48,8 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
 .hero p{font-size:16.5px;color:var(--muted);margin:0;max-width:620px}
 .privacy{display:inline-flex;align-items:center;gap:7px;margin-top:16px;padding:7px 13px;background:var(--success-soft);color:var(--success);border-radius:999px;font-size:13px;font-weight:500}
 .privacy svg{width:15px;height:15px}
+.stat-processed{margin-top:12px;font-size:13.5px;color:var(--muted)}
+.stat-processed b{color:var(--brand);font-weight:700;font-variant-numeric:tabular-nums}
 
 /* Dropzone */
 .drop{margin-top:22px;border:2px dashed var(--hairline-strong);border-radius:var(--radius);background:var(--surface);padding:44px 24px;text-align:center;cursor:pointer;transition:.18s}
@@ -151,6 +153,7 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg>
       Nén tức thì · giữ nguyên chất lượng mắt thường thấy · tự chuyển WebP
     </div>
+    <div class="stat-processed" id="statProcessed" hidden>🖼️ Đã xử lý <b id="statNum">0</b> ảnh</div>
   </section>
 
   <div class="drop" id="drop">
@@ -240,6 +243,13 @@ try{
   console.log('Công cụ nén ảnh miễn phí · https://vigdigital.com · Mã nguồn: https://github.com/vigdigital/vig-pixoptimizer');
 }catch(e){}
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+
+/* ---------- Counter "Đã xử lý N ảnh" (luỹ kế trên máy này) ---------- */
+let processedTotal=0;
+try{processedTotal=parseInt(localStorage.getItem('pixopt_total'),10)||0;}catch(e){}
+function renderProcessed(){const el=$('#statProcessed');if(!el)return;if(processedTotal>0){$('#statNum').textContent=processedTotal.toLocaleString('vi-VN');el.hidden=false;}else{el.hidden=true;}}
+function bumpProcessed(n){processedTotal+=n;try{localStorage.setItem('pixopt_total',processedTotal);}catch(e){}renderProcessed();}
+renderProcessed();
 
 /* ---------- Limits (chống quá tải trình duyệt) ---------- */
 const LIMITS={files:20,perFile:25*1024*1024,total:100*1024*1024,megapixel:50*1e6};
@@ -376,6 +386,7 @@ async function process(it){
   try{
     const r=await optimizeOne(it.file,opts());
     it.result=r;
+    if(!it.counted){it.counted=true;bumpProcessed(1);}   // đếm 1 lần/ảnh, không tính lại khi "Nén lại"
     if(it.url)URL.revokeObjectURL(it.url);
     it.blob=new Blob([r.best.buf],{type:r.best.type});
     it.url=URL.createObjectURL(it.blob);
