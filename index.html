@@ -46,8 +46,11 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
 .hero h2{font-size:33px;font-weight:600;margin:0 0 10px;line-height:1.12}
 .hero h2 em{font-style:italic;color:var(--brand)}
 .hero p{font-size:16.5px;color:var(--muted);margin:0;max-width:620px}
-.privacy{display:inline-flex;align-items:center;gap:7px;margin-top:16px;padding:7px 13px;background:var(--success-soft);color:var(--success);border-radius:999px;font-size:13px;font-weight:500}
-.privacy svg{width:15px;height:15px}
+.perks{list-style:none;margin:20px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:11px 30px;max-width:640px}
+.perks li{display:flex;align-items:center;gap:9px;font-size:15px;color:var(--ink)}
+.perks li svg{width:18px;height:18px;color:var(--brand);flex:none}
+.perks li b{font-weight:600}
+@media(max-width:560px){.perks{grid-template-columns:1fr;gap:10px}}
 .stat-processed{margin-top:12px;font-size:13.5px;color:var(--muted)}
 .stat-processed b{color:var(--brand);font-weight:700;font-variant-numeric:tabular-nums}
 
@@ -149,10 +152,14 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
   <section class="hero">
     <h2>Ảnh nhẹ hơn tới <em>80%</em>, chất lượng gần như nguyên vẹn</h2>
     <p>Kéo ảnh vào — PixOptimizer nén tối ưu cho web (JPG · PNG · WebP), giảm mạnh dung lượng để trang tải nhanh hơn và tốt cho SEO. Miễn phí, không giới hạn số lần.</p>
-    <div class="privacy">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg>
-      Nén tức thì · giữ nguyên chất lượng mắt thường thấy · tự chuyển WebP
-    </div>
+    <ul class="perks">
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><b>Web tải nhanh hơn</b></li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><b>Tốt cho SEO (Core Web Vitals)</b></li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><b>Tự chuyển WebP hiện đại</b></li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><b>Xử lý hàng loạt, tải về .zip</b></li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><b>So sánh trước / sau ngay</b></li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><b>Nhanh, không cần cài app</b></li>
+    </ul>
     <div class="stat-processed" id="statProcessed" hidden>🖼️ Đã xử lý <b id="statNum">0</b> ảnh</div>
   </section>
 
