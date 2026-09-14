@@ -26,3 +26,10 @@ npx esbuild entry.js --bundle --format=esm --outdir=../assets/codecs --entry-nam
 # copy .wasm cạnh bundle (mozjpeg_enc / webp_enc / webp_enc_simd)
 ```
 Chi tiết deploy hạ tầng: doc nội bộ `Hosting/tools.vigdigital.com.md` (không đưa vào repo public).
+
+## 📄 Giấy phép & nguồn
+- Mã nguồn: **MIT** (xem `LICENSE`) — dùng lại tự do, vui lòng **giữ dòng ghi nguồn VIG Digital**.
+- Ghi nguồn có ở: comment đầu `index.html` (view-source), `<meta author/generator>`, banner console (inspect), footer trang.
+- Ảnh mẫu (`assets/sample.jpg`): ảnh của **r. nolan / Unsplash** (Unsplash License).
+
+Made with ♥ by [VIG Digital](https://vigdigital.com).
