@@ -425,11 +425,16 @@ function updateSummary(){
 }
 
 /* ---------- Download ---------- */
+// GA4: đo lượt chuyển đổi = bấm tải về. Event 'download' (đánh dấu Key event trong GA4).
+function trackDownload(method,format,count){
+  try{ if(typeof gtag==='function') gtag('event','download',{method:method,file_format:format,image_count:count||1}); }catch(e){}
+}
 function download(it){
   if(!it.result)return;
   const a=document.createElement('a');a.href=it.url;
   a.download=baseName(it.file.name)+'.'+it.result.best.ext;
   document.body.appendChild(a);a.click();a.remove();
+  trackDownload('single',it.result.best.ext,1);
 }
 $('#dlAll').onclick=async()=>{
   const done=items.filter(i=>i.result);if(!done.length)return;
@@ -447,6 +452,7 @@ $('#dlAll').onclick=async()=>{
     const a=document.createElement('a');a.href=url;
     a.download='pixoptimizer.zip';document.body.appendChild(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),4000);
+    trackDownload('zip','zip',done.length);
   }catch(e){showNotice('Không tạo được .zip: '+(e.message||e));}
   btn.disabled=false;
 };
