@@ -96,22 +96,9 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
 .rangewrap .val{font-size:13px;min-width:34px;color:var(--ink)}
 .chk{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);cursor:pointer}
 .chk input{width:16px;height:16px;accent-color:var(--brand)}
-/* Watermark panel */
-.wm-panel{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:12px}
-.wm-panel .mini{font-size:12.5px;color:var(--muted)}
-.wm-text{font-family:inherit;font-size:14px;padding:8px 11px;border:1px solid var(--hairline-strong);border-radius:8px;background:var(--surface);color:var(--ink);min-width:190px}
-.wm-grid{display:grid;grid-template-columns:repeat(3,15px);grid-auto-rows:15px;gap:3px}
-.wm-grid button{border:1px solid var(--hairline-strong);background:var(--surface);border-radius:4px;cursor:pointer;padding:0;width:15px;height:15px}
-.wm-grid button.on{background:var(--brand);border-color:var(--brand)}
-.wm-grid button:hover{border-color:var(--brand)}
-/* Stage headings + watermark section (Giai đoạn 2) */
-.stage-head{display:flex;align-items:center;gap:10px;margin:26px 0 10px}
-.stage-head .num{width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;font-size:13px;font-weight:700;display:grid;place-items:center;flex:none}
-.stage-head h3{font-size:18px;margin:0}
-.stage-head .mini{font-weight:400;color:var(--muted);font-size:13.5px}
-.wm-section{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius);padding:16px 18px}
-.wm-section>.chk{font-size:15px;font-weight:600}
-.wm-section .wm-panel{margin-top:12px;padding-top:14px;border-top:1px dashed var(--hairline-strong)}
+/* Cross-link sang PixMark */
+.xlink{margin-top:22px;text-align:center;font-size:14px;color:var(--muted)}
+.xlink a{font-weight:600}
 
 /* Summary */
 .summary{display:none;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:18px;padding:16px 18px;background:linear-gradient(150deg,var(--brand),var(--brand-bright));color:#fff;border-radius:var(--radius)}
@@ -213,7 +200,6 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
   <div style="text-align:center;margin-top:12px"><button class="btn btn-ghost" id="sampleBtn">Chưa có ảnh? Thử ảnh mẫu →</button></div>
   <div class="notice" id="notice"></div>
 
-  <div class="stage-head" id="stage1Head" hidden><span class="num">1</span><h3>Nén ảnh <span class="mini">— kéo thả, tự tối ưu</span></h3></div>
   <div class="controls" id="controls">
     <div class="ctl">
       <label>Định dạng xuất</label>
@@ -248,29 +234,7 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
 
   <div class="results" id="results"></div>
 
-  <div class="stage-head" id="stage2Head" hidden><span class="num">2</span><h3>Chèn watermark <span class="mini">— đóng dấu lên ảnh (tuỳ chọn)</span></h3></div>
-  <section class="wm-section" id="wmSection" hidden>
-    <label class="chk"><input type="checkbox" id="wmOn"> <span>Bật watermark chữ lên ảnh</span></label>
-    <div class="wm-panel" id="wmPanel" hidden>
-      <input type="text" class="wm-text" id="wmText" placeholder="© Tên của bạn" maxlength="60">
-      <div class="seg" id="wmMode">
-        <button data-v="single" class="on">1 vị trí</button>
-        <button data-v="tile">Lặp kín ⤢</button>
-      </div>
-      <div class="wm-grid" id="wmGrid" title="Vị trí watermark">
-        <button data-p="tl" aria-label="trên trái"></button><button data-p="tc" aria-label="trên giữa"></button><button data-p="tr" aria-label="trên phải"></button>
-        <button data-p="ml" aria-label="giữa trái"></button><button data-p="mc" aria-label="chính giữa"></button><button data-p="mr" aria-label="giữa phải"></button>
-        <button data-p="bl" aria-label="dưới trái"></button><button data-p="bc" aria-label="dưới giữa"></button><button data-p="br" class="on" aria-label="dưới phải"></button>
-      </div>
-      <div class="seg" id="wmColor">
-        <button data-v="light" class="on">Trắng</button>
-        <button data-v="dark">Đen</button>
-        <button data-v="brand">Hồng</button>
-      </div>
-      <div class="rangewrap"><span class="mini">Độ mờ</span><input type="range" id="wmOpacity" min="5" max="100" value="35"><span class="val mono" id="wmOpacityV">35%</span></div>
-      <div class="rangewrap"><span class="mini">Cỡ</span><input type="range" id="wmSize" min="2" max="14" value="5"><span class="val mono" id="wmSizeV">5%</span></div>
-    </div>
-  </section>
+  <div class="xlink">🔖 Cần <b>đóng dấu bản quyền / watermark</b> lên ảnh? Thử <a href="https://tools.vigdigital.com/pixmark/">PixMark</a> →</div>
 </div>
 
 <!-- Compare modal -->
@@ -344,34 +308,7 @@ function renderCanvas(bmp,opts,tf){
   ctx.scale((tf&&tf.flipH)?-1:1,(tf&&tf.flipV)?-1:1);
   ctx.drawImage(bmp,-w/2,-h/2,w,h);
   ctx.restore();
-  if(opts.wm && opts.wm.on && opts.wm.text.trim()) drawWatermark(ctx,cw,ch,opts.wm);
   return {imageData:ctx.getImageData(0,0,cw,ch),canvas:c,w:cw,h:ch};
-}
-function drawWatermark(ctx,W,H,wm){
-  const text=wm.text.trim(); if(!text) return;
-  const fontPx=Math.max(11,Math.round(W*(wm.size/100)));
-  ctx.save();
-  ctx.font=`600 ${fontPx}px 'Instrument Sans',system-ui,sans-serif`;
-  ctx.textBaseline='middle';
-  const col=wm.color==='dark'?'0,0,0':wm.color==='brand'?'196,39,93':'255,255,255';
-  ctx.globalAlpha=Math.max(.03,Math.min(1,wm.opacity/100));
-  ctx.fillStyle=`rgb(${col})`;
-  ctx.shadowColor=wm.color==='dark'?'rgba(255,255,255,.5)':'rgba(0,0,0,.45)';
-  ctx.shadowBlur=Math.max(1,Math.round(fontPx*0.1));
-  if(wm.mode==='tile'){
-    ctx.textAlign='center';
-    ctx.translate(W/2,H/2);ctx.rotate(-Math.PI/6);ctx.translate(-W/2,-H/2);
-    const tw=ctx.measureText(text).width;
-    const stepX=tw+fontPx*2.4, stepY=fontPx*3.4, diag=Math.ceil(Math.hypot(W,H));
-    for(let y=-diag;y<diag;y+=stepY) for(let x=-diag;x<diag;x+=stepX) ctx.fillText(text,x,y);
-  }else{
-    const m=Math.round(fontPx*0.85), p=wm.pos||'br';
-    let x=W/2,y=H/2;
-    if(p[1]==='l'){ctx.textAlign='left';x=m;} else if(p[1]==='r'){ctx.textAlign='right';x=W-m;} else {ctx.textAlign='center';x=W/2;}
-    if(p[0]==='t')y=m+fontPx/2; else if(p[0]==='b')y=H-m-fontPx/2; else y=H/2;
-    ctx.fillText(text,x,y);
-  }
-  ctx.restore();
 }
 
 /* ---------- Optimize 1 file ---------- */
@@ -405,9 +342,11 @@ async function optimizeOne(file,opts,tf){
 
   // chọn ứng viên nhỏ nhất
   let best=candidates.sort((a,b)=>a.buf.byteLength-b.buf.byteLength)[0];
-  // không bao giờ phình to: nếu lớn hơn gốc và giữ nguyên định dạng gốc được → giữ gốc
+  // không phình to: nếu output ≥ gốc VÀ không xoay/lật → giữ gốc.
+  // Có xoay/lật thì phải dùng ảnh đã render (gốc chưa xoay).
   const origBuf=await file.arrayBuffer();
-  if(best.buf.byteLength>=origBuf.byteLength){
+  const edited=tf&&(((tf.rot||0)%360)!==0||tf.flipH||tf.flipV);
+  if(!edited && best.buf.byteLength>=origBuf.byteLength){
     best={buf:origBuf,type:src,ext:(src.split('/')[1]||'img').replace('jpeg','jpg'),kept:true};
   }
   return {best,origSize:origBuf.byteLength,w,h,srcType:src};
@@ -423,19 +362,6 @@ function opts(){
     quality:+$('#q').value,
     resize:$('#resize').checked,
     maxw:+$('#maxw').value||2000,
-    wm:wmConfig(),
-  };
-}
-function wmConfig(){
-  const g=$('#wmGrid button.on');
-  return {
-    on:$('#wmOn').checked,
-    text:$('#wmText').value||'',
-    mode:($('#wmMode .on')||{}).dataset?.v||'single',
-    pos:g?g.dataset.p:'br',
-    color:($('#wmColor .on')||{}).dataset?.v||'light',
-    opacity:+$('#wmOpacity').value,
-    size:+$('#wmSize').value,
   };
 }
 function showNotice(msg){const n=$('#notice');n.textContent=msg;n.classList.add('show');setTimeout(()=>n.classList.remove('show'),6000);}
@@ -455,9 +381,6 @@ function accept(files){
   if(msgs.length)showNotice(msgs.join(' '));
   if(!okList.length)return;
   $('#controls').classList.add('show');
-  $('#stage1Head').hidden=false;
-  $('#stage2Head').hidden=false;
-  $('#wmSection').hidden=false;
   okList.forEach(addItem);
   countHit(okList.length);   // thả ảnh vào là đếm (toàn cục)
   runQueue();
@@ -600,35 +523,6 @@ function reprocessOne(it){
   it.el.querySelector('.proc').innerHTML='<span class="spin"></span>';
   runQueue();
 }
-
-/* ---------- Watermark controls ---------- */
-const wmPanel=$('#wmPanel');
-function wmRerunAll(){ if(!items.length)return; items.forEach(i=>{i.pending=true;i.el.querySelector('.proc').innerHTML='<span class="spin"></span>';}); runQueue(); }
-function wmSave(){ try{ localStorage.setItem('pixopt_wm', JSON.stringify(wmConfig())); }catch(e){} }
-function wmApply(){ wmSave(); if($('#wmOn').checked) wmRerunAll(); }
-function segPick(sel,b){ $$(sel+' button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); }
-function wmTileState(){ const tile=($('#wmMode .on')||{}).dataset?.v==='tile'; $('#wmGrid').style.opacity=tile?'.3':'1'; $('#wmGrid').style.pointerEvents=tile?'none':'auto'; }
-$('#wmOn').addEventListener('change',()=>{ wmPanel.hidden=!$('#wmOn').checked; wmSave(); wmRerunAll(); });
-$('#wmText').addEventListener('change',wmApply);
-$('#wmMode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;segPick('#wmMode',b);wmTileState();wmApply();});
-$('#wmGrid').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;segPick('#wmGrid',b);wmApply();});
-$('#wmColor').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;segPick('#wmColor',b);wmApply();});
-$('#wmOpacity').addEventListener('input',()=>$('#wmOpacityV').textContent=$('#wmOpacity').value+'%');
-$('#wmOpacity').addEventListener('change',wmApply);
-$('#wmSize').addEventListener('input',()=>$('#wmSizeV').textContent=$('#wmSize').value+'%');
-$('#wmSize').addEventListener('change',wmApply);
-(function restoreWm(){ try{
-  const s=JSON.parse(localStorage.getItem('pixopt_wm')||'null'); if(!s)return;
-  if(s.text!=null)$('#wmText').value=s.text;
-  if(s.opacity){$('#wmOpacity').value=s.opacity;$('#wmOpacityV').textContent=s.opacity+'%';}
-  if(s.size){$('#wmSize').value=s.size;$('#wmSizeV').textContent=s.size+'%';}
-  const setSeg=(sel,v)=>$$(sel+' button').forEach(x=>x.classList.toggle('on',x.dataset.v===v));
-  if(s.mode)setSeg('#wmMode',s.mode);
-  if(s.color)setSeg('#wmColor',s.color);
-  if(s.pos)$$('#wmGrid button').forEach(x=>x.classList.toggle('on',x.dataset.p===s.pos));
-  wmTileState();
-  if(s.on){$('#wmOn').checked=true;wmPanel.hidden=false;}
-}catch(e){} })();
 
 /* ---------- Drop wiring ---------- */
 const drop=$('#drop'),input=$('#file');
