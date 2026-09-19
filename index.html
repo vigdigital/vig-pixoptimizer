@@ -96,6 +96,15 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
 .rangewrap .val{font-size:13px;min-width:34px;color:var(--ink)}
 .chk{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);cursor:pointer}
 .chk input{width:16px;height:16px;accent-color:var(--brand)}
+/* Watermark panel */
+.wm-ctl{flex-basis:100%;width:100%;border-top:1px dashed var(--hairline-strong);padding-top:13px;margin-top:2px}
+.wm-panel{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:12px}
+.wm-panel .mini{font-size:12.5px;color:var(--muted)}
+.wm-text{font-family:inherit;font-size:14px;padding:8px 11px;border:1px solid var(--hairline-strong);border-radius:8px;background:var(--surface);color:var(--ink);min-width:190px}
+.wm-grid{display:grid;grid-template-columns:repeat(3,15px);grid-auto-rows:15px;gap:3px}
+.wm-grid button{border:1px solid var(--hairline-strong);background:var(--surface);border-radius:4px;cursor:pointer;padding:0;width:15px;height:15px}
+.wm-grid button.on{background:var(--brand);border-color:var(--brand)}
+.wm-grid button:hover{border-color:var(--brand)}
 
 /* Summary */
 .summary{display:none;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:18px;padding:16px 18px;background:linear-gradient(150deg,var(--brand),var(--brand-bright));color:#fff;border-radius:var(--radius)}
@@ -124,7 +133,7 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
 .badge.save{background:var(--success-soft);color:var(--success)}
 .badge.same{background:var(--warn-soft);color:var(--warn)}
 .badge.fmt{background:var(--brand-soft);color:var(--brand)}
-.card .acts{display:flex;gap:6px;flex:none}
+.card .acts{display:flex;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end;max-width:230px}
 .icon-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--hairline-strong);background:var(--surface);color:var(--muted);cursor:pointer;display:grid;place-items:center;transition:.15s}
 .icon-btn:hover{border-color:var(--brand);color:var(--brand)}
 .icon-btn svg{width:16px;height:16px}
@@ -215,6 +224,29 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
       <label>&nbsp;</label>
       <button class="btn btn-ghost" id="reoptimize">Nén lại</button>
     </div>
+
+    <div class="wm-ctl">
+      <label class="chk"><input type="checkbox" id="wmOn"> <span>Chèn watermark <span class="mini">— đóng dấu chữ lên ảnh</span></span></label>
+      <div class="wm-panel" id="wmPanel" hidden>
+        <input type="text" class="wm-text" id="wmText" placeholder="© Tên của bạn" maxlength="60">
+        <div class="seg" id="wmMode">
+          <button data-v="single" class="on">1 vị trí</button>
+          <button data-v="tile">Lặp kín ⤢</button>
+        </div>
+        <div class="wm-grid" id="wmGrid" title="Vị trí watermark">
+          <button data-p="tl" aria-label="trên trái"></button><button data-p="tc" aria-label="trên giữa"></button><button data-p="tr" aria-label="trên phải"></button>
+          <button data-p="ml" aria-label="giữa trái"></button><button data-p="mc" aria-label="chính giữa"></button><button data-p="mr" aria-label="giữa phải"></button>
+          <button data-p="bl" aria-label="dưới trái"></button><button data-p="bc" aria-label="dưới giữa"></button><button data-p="br" class="on" aria-label="dưới phải"></button>
+        </div>
+        <div class="seg" id="wmColor">
+          <button data-v="light" class="on">Trắng</button>
+          <button data-v="dark">Đen</button>
+          <button data-v="brand">Hồng</button>
+        </div>
+        <div class="rangewrap"><span class="mini">Độ mờ</span><input type="range" id="wmOpacity" min="5" max="100" value="35"><span class="val mono" id="wmOpacityV">35%</span></div>
+        <div class="rangewrap"><span class="mini">Cỡ</span><input type="range" id="wmSize" min="2" max="14" value="5"><span class="val mono" id="wmSizeV">5%</span></div>
+      </div>
+    </div>
   </div>
 
   <div class="summary" id="summary">
@@ -285,19 +317,55 @@ async function fileToImageData(file){
   if(!bmp) throw new Error('Không đọc được ảnh');
   return bmp;
 }
-function drawToImageData(bmp,maxW,doResize){
+function renderCanvas(bmp,opts,tf){
   let w=bmp.width,h=bmp.height;
-  if(doResize && maxW>0 && w>maxW){h=Math.round(h*maxW/w);w=maxW;}
-  const c=document.createElement('canvas');c.width=w;c.height=h;
-  const ctx=c.getContext('2d');ctx.drawImage(bmp,0,0,w,h);
-  return {imageData:ctx.getImageData(0,0,w,h),canvas:c,w,h};
+  const doResize = opts.resize || w*h>LIMITS.megapixel;
+  if(doResize && opts.maxw>0 && w>opts.maxw){h=Math.round(h*opts.maxw/w);w=opts.maxw;}
+  const rot=((((tf&&tf.rot)||0)%360)+360)%360;
+  const swap=rot===90||rot===270;
+  const cw=swap?h:w, ch=swap?w:h;
+  const c=document.createElement('canvas');c.width=cw;c.height=ch;
+  const ctx=c.getContext('2d');
+  ctx.save();
+  ctx.translate(cw/2,ch/2);
+  if(rot)ctx.rotate(rot*Math.PI/180);
+  ctx.scale((tf&&tf.flipH)?-1:1,(tf&&tf.flipV)?-1:1);
+  ctx.drawImage(bmp,-w/2,-h/2,w,h);
+  ctx.restore();
+  if(opts.wm && opts.wm.on && opts.wm.text.trim()) drawWatermark(ctx,cw,ch,opts.wm);
+  return {imageData:ctx.getImageData(0,0,cw,ch),canvas:c,w:cw,h:ch};
+}
+function drawWatermark(ctx,W,H,wm){
+  const text=wm.text.trim(); if(!text) return;
+  const fontPx=Math.max(11,Math.round(W*(wm.size/100)));
+  ctx.save();
+  ctx.font=`600 ${fontPx}px 'Instrument Sans',system-ui,sans-serif`;
+  ctx.textBaseline='middle';
+  const col=wm.color==='dark'?'0,0,0':wm.color==='brand'?'196,39,93':'255,255,255';
+  ctx.globalAlpha=Math.max(.03,Math.min(1,wm.opacity/100));
+  ctx.fillStyle=`rgb(${col})`;
+  ctx.shadowColor=wm.color==='dark'?'rgba(255,255,255,.5)':'rgba(0,0,0,.45)';
+  ctx.shadowBlur=Math.max(1,Math.round(fontPx*0.1));
+  if(wm.mode==='tile'){
+    ctx.textAlign='center';
+    ctx.translate(W/2,H/2);ctx.rotate(-Math.PI/6);ctx.translate(-W/2,-H/2);
+    const tw=ctx.measureText(text).width;
+    const stepX=tw+fontPx*2.4, stepY=fontPx*3.4, diag=Math.ceil(Math.hypot(W,H));
+    for(let y=-diag;y<diag;y+=stepY) for(let x=-diag;x<diag;x+=stepX) ctx.fillText(text,x,y);
+  }else{
+    const m=Math.round(fontPx*0.85), p=wm.pos||'br';
+    let x=W/2,y=H/2;
+    if(p[1]==='l'){ctx.textAlign='left';x=m;} else if(p[1]==='r'){ctx.textAlign='right';x=W-m;} else {ctx.textAlign='center';x=W/2;}
+    if(p[0]==='t')y=m+fontPx/2; else if(p[0]==='b')y=H-m-fontPx/2; else y=H/2;
+    ctx.fillText(text,x,y);
+  }
+  ctx.restore();
 }
 
 /* ---------- Optimize 1 file ---------- */
-async function optimizeOne(file,opts){
+async function optimizeOne(file,opts,tf){
   const bmp=await fileToImageData(file);
-  if(bmp.width*bmp.height>LIMITS.megapixel && !opts.resize){/* sẽ hạ mẫu nếu quá lớn */}
-  const {imageData,w,h}=drawToImageData(bmp,opts.maxw,opts.resize || bmp.width*bmp.height>LIMITS.megapixel);
+  const {imageData,w,h}=renderCanvas(bmp,opts,tf);
   const src=file.type;
   const q=opts.quality;
   const candidates=[];
@@ -343,6 +411,19 @@ function opts(){
     quality:+$('#q').value,
     resize:$('#resize').checked,
     maxw:+$('#maxw').value||2000,
+    wm:wmConfig(),
+  };
+}
+function wmConfig(){
+  const g=$('#wmGrid button.on');
+  return {
+    on:$('#wmOn').checked,
+    text:$('#wmText').value||'',
+    mode:($('#wmMode .on')||{}).dataset?.v||'single',
+    pos:g?g.dataset.p:'br',
+    color:($('#wmColor .on')||{}).dataset?.v||'light',
+    opacity:+$('#wmOpacity').value,
+    size:+$('#wmSize').value,
   };
 }
 function showNotice(msg){const n=$('#notice');n.textContent=msg;n.classList.add('show');setTimeout(()=>n.classList.remove('show'),6000);}
@@ -373,34 +454,46 @@ function addItem(file){
     <div class="meta"><div class="fn"></div>
       <div class="szline"><span class="orig"></span><span class="arrow">→</span><span class="proc"><span class="spin"></span></span></div></div>
     <div class="acts">
+      <button class="icon-btn rl-btn" title="Xoay trái"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg></button>
+      <button class="icon-btn rr-btn" title="Xoay phải"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.5 15a9 9 0 1 1-2.1-9.4L23 10"/></svg></button>
+      <button class="icon-btn fh-btn" title="Lật ngang"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/><path d="M16 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M12 2v20"/></svg></button>
+      <button class="icon-btn fv-btn" title="Lật dọc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3"/><path d="M20 16v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3"/><path d="M2 12h20"/></svg></button>
       <button class="icon-btn cmp-btn" title="So sánh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 8l-3 4 3 4M19 8l3 4-3 4"/></svg></button>
       <button class="icon-btn dl-btn" title="Tải"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M12 15l-4-4M12 15l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg></button>
     </div>`;
   el.querySelector('.fn').textContent=file.name;
   el.querySelector('.orig').textContent=fmtBytes(file.size);
   results.appendChild(el);
-  const it={file,el,result:null,url:null,baseUrl:URL.createObjectURL(file)};
+  const it={file,el,result:null,url:null,baseUrl:URL.createObjectURL(file),tf:{rot:0,flipH:false,flipV:false}};
   el.querySelector('.thumb').src=it.baseUrl;
   items.push(it);
   el.querySelector('.cmp-btn').onclick=()=>openCompare(it);
   el.querySelector('.dl-btn').onclick=()=>download(it);
+  el.querySelector('.rl-btn').onclick=()=>{it.tf.rot=(it.tf.rot+270)%360;reprocessOne(it);};
+  el.querySelector('.rr-btn').onclick=()=>{it.tf.rot=(it.tf.rot+90)%360;reprocessOne(it);};
+  el.querySelector('.fh-btn').onclick=()=>{it.tf.flipH=!it.tf.flipH;reprocessOne(it);};
+  el.querySelector('.fv-btn').onclick=()=>{it.tf.flipV=!it.tf.flipV;reprocessOne(it);};
 }
 
-let running=false;
+let running=false, queueDirty=false;
 async function runQueue(){
-  if(running)return;running=true;
-  for(const it of items){ if(!it.result) await process(it); }
+  if(running){queueDirty=true;return;}
+  running=true;
+  do{ queueDirty=false;
+    for(const it of items){ if(!it.result) await process(it); }
+  } while(queueDirty);
   running=false;updateSummary();
 }
 async function process(it){
   it.el.classList.add('working');
   const proc=it.el.querySelector('.proc');
   try{
-    const r=await optimizeOne(it.file,opts());
+    const r=await optimizeOne(it.file,opts(),it.tf);
     it.result=r;
     if(it.url)URL.revokeObjectURL(it.url);
     it.blob=new Blob([r.best.buf],{type:r.best.type});
     it.url=URL.createObjectURL(it.blob);
+    it.el.querySelector('.thumb').src=it.url;
     const pct=Math.max(0,Math.round((1-r.best.buf.byteLength/r.origSize)*100));
     const fmtChanged=r.best.type!==r.srcType;
     proc.innerHTML=`<span class="newsz">${fmtBytes(r.best.buf.byteLength)}</span>`
@@ -478,6 +571,43 @@ $$('[data-close]').forEach(e=>e.onclick=()=>modal.classList.remove('show'));
 $('#reoptimize').onclick=()=>{items.forEach(i=>{i.result=null;i.el.querySelector('.proc').innerHTML='<span class="spin"></span>';});runQueue();};
 $('#fmt').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$$('#fmt button').forEach(x=>x.classList.remove('on'));b.classList.add('on');});
 $('#q').addEventListener('input',()=>$('#qv').textContent=$('#q').value);
+
+/* ---------- Xoay/lật 1 ảnh ---------- */
+function reprocessOne(it){
+  it.result=null;
+  it.el.classList.add('working');
+  it.el.querySelector('.proc').innerHTML='<span class="spin"></span>';
+  runQueue();
+}
+
+/* ---------- Watermark controls ---------- */
+const wmPanel=$('#wmPanel');
+function wmRerunAll(){ if(!items.length)return; items.forEach(i=>{i.result=null;i.el.querySelector('.proc').innerHTML='<span class="spin"></span>';}); runQueue(); }
+function wmSave(){ try{ localStorage.setItem('pixopt_wm', JSON.stringify(wmConfig())); }catch(e){} }
+function wmApply(){ wmSave(); if($('#wmOn').checked) wmRerunAll(); }
+function segPick(sel,b){ $$(sel+' button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); }
+function wmTileState(){ const tile=($('#wmMode .on')||{}).dataset?.v==='tile'; $('#wmGrid').style.opacity=tile?'.3':'1'; $('#wmGrid').style.pointerEvents=tile?'none':'auto'; }
+$('#wmOn').addEventListener('change',()=>{ wmPanel.hidden=!$('#wmOn').checked; wmSave(); wmRerunAll(); });
+$('#wmText').addEventListener('change',wmApply);
+$('#wmMode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;segPick('#wmMode',b);wmTileState();wmApply();});
+$('#wmGrid').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;segPick('#wmGrid',b);wmApply();});
+$('#wmColor').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;segPick('#wmColor',b);wmApply();});
+$('#wmOpacity').addEventListener('input',()=>$('#wmOpacityV').textContent=$('#wmOpacity').value+'%');
+$('#wmOpacity').addEventListener('change',wmApply);
+$('#wmSize').addEventListener('input',()=>$('#wmSizeV').textContent=$('#wmSize').value+'%');
+$('#wmSize').addEventListener('change',wmApply);
+(function restoreWm(){ try{
+  const s=JSON.parse(localStorage.getItem('pixopt_wm')||'null'); if(!s)return;
+  if(s.text!=null)$('#wmText').value=s.text;
+  if(s.opacity){$('#wmOpacity').value=s.opacity;$('#wmOpacityV').textContent=s.opacity+'%';}
+  if(s.size){$('#wmSize').value=s.size;$('#wmSizeV').textContent=s.size+'%';}
+  const setSeg=(sel,v)=>$$(sel+' button').forEach(x=>x.classList.toggle('on',x.dataset.v===v));
+  if(s.mode)setSeg('#wmMode',s.mode);
+  if(s.color)setSeg('#wmColor',s.color);
+  if(s.pos)$$('#wmGrid button').forEach(x=>x.classList.toggle('on',x.dataset.p===s.pos));
+  wmTileState();
+  if(s.on){$('#wmOn').checked=true;wmPanel.hidden=false;}
+}catch(e){} })();
 
 /* ---------- Drop wiring ---------- */
 const drop=$('#drop'),input=$('#file');
