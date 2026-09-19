@@ -97,7 +97,6 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
 .chk{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);cursor:pointer}
 .chk input{width:16px;height:16px;accent-color:var(--brand)}
 /* Watermark panel */
-.wm-ctl{flex-basis:100%;width:100%;border-top:1px dashed var(--hairline-strong);padding-top:13px;margin-top:2px}
 .wm-panel{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:12px}
 .wm-panel .mini{font-size:12.5px;color:var(--muted)}
 .wm-text{font-family:inherit;font-size:14px;padding:8px 11px;border:1px solid var(--hairline-strong);border-radius:8px;background:var(--surface);color:var(--ink);min-width:190px}
@@ -105,6 +104,14 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
 .wm-grid button{border:1px solid var(--hairline-strong);background:var(--surface);border-radius:4px;cursor:pointer;padding:0;width:15px;height:15px}
 .wm-grid button.on{background:var(--brand);border-color:var(--brand)}
 .wm-grid button:hover{border-color:var(--brand)}
+/* Stage headings + watermark section (Giai đoạn 2) */
+.stage-head{display:flex;align-items:center;gap:10px;margin:26px 0 10px}
+.stage-head .num{width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;font-size:13px;font-weight:700;display:grid;place-items:center;flex:none}
+.stage-head h3{font-size:18px;margin:0}
+.stage-head .mini{font-weight:400;color:var(--muted);font-size:13.5px}
+.wm-section{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius);padding:16px 18px}
+.wm-section>.chk{font-size:15px;font-weight:600}
+.wm-section .wm-panel{margin-top:12px;padding-top:14px;border-top:1px dashed var(--hairline-strong)}
 
 /* Summary */
 .summary{display:none;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:18px;padding:16px 18px;background:linear-gradient(150deg,var(--brand),var(--brand-bright));color:#fff;border-radius:var(--radius)}
@@ -122,8 +129,11 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
 
 /* Results */
 .results{margin-top:16px;display:flex;flex-direction:column;gap:10px}
-.card{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius);padding:12px 14px}
-.card .thumb{width:52px;height:52px;border-radius:9px;object-fit:cover;flex:none;background:var(--surface-2);border:1px solid var(--hairline)}
+.card{display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius);padding:14px}
+.card-head{display:flex;align-items:center;gap:14px}
+.card .preview{width:100%;background:var(--surface-2);border:1px solid var(--hairline);border-radius:10px;min-height:110px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.card .preview img{max-width:100%;max-height:70vh;display:block;object-fit:contain}
+.card.working .preview{opacity:.55}
 .card .meta{flex:1;min-width:0}
 .card .fn{font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .szline{font-size:13px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -203,6 +213,7 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
   <div style="text-align:center;margin-top:12px"><button class="btn btn-ghost" id="sampleBtn">Chưa có ảnh? Thử ảnh mẫu →</button></div>
   <div class="notice" id="notice"></div>
 
+  <div class="stage-head" id="stage1Head" hidden><span class="num">1</span><h3>Nén ảnh <span class="mini">— kéo thả, tự tối ưu</span></h3></div>
   <div class="controls" id="controls">
     <div class="ctl">
       <label>Định dạng xuất</label>
@@ -224,29 +235,6 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
       <label>&nbsp;</label>
       <button class="btn btn-ghost" id="reoptimize">Nén lại</button>
     </div>
-
-    <div class="wm-ctl">
-      <label class="chk"><input type="checkbox" id="wmOn"> <span>Chèn watermark <span class="mini">— đóng dấu chữ lên ảnh</span></span></label>
-      <div class="wm-panel" id="wmPanel" hidden>
-        <input type="text" class="wm-text" id="wmText" placeholder="© Tên của bạn" maxlength="60">
-        <div class="seg" id="wmMode">
-          <button data-v="single" class="on">1 vị trí</button>
-          <button data-v="tile">Lặp kín ⤢</button>
-        </div>
-        <div class="wm-grid" id="wmGrid" title="Vị trí watermark">
-          <button data-p="tl" aria-label="trên trái"></button><button data-p="tc" aria-label="trên giữa"></button><button data-p="tr" aria-label="trên phải"></button>
-          <button data-p="ml" aria-label="giữa trái"></button><button data-p="mc" aria-label="chính giữa"></button><button data-p="mr" aria-label="giữa phải"></button>
-          <button data-p="bl" aria-label="dưới trái"></button><button data-p="bc" aria-label="dưới giữa"></button><button data-p="br" class="on" aria-label="dưới phải"></button>
-        </div>
-        <div class="seg" id="wmColor">
-          <button data-v="light" class="on">Trắng</button>
-          <button data-v="dark">Đen</button>
-          <button data-v="brand">Hồng</button>
-        </div>
-        <div class="rangewrap"><span class="mini">Độ mờ</span><input type="range" id="wmOpacity" min="5" max="100" value="35"><span class="val mono" id="wmOpacityV">35%</span></div>
-        <div class="rangewrap"><span class="mini">Cỡ</span><input type="range" id="wmSize" min="2" max="14" value="5"><span class="val mono" id="wmSizeV">5%</span></div>
-      </div>
-    </div>
   </div>
 
   <div class="summary" id="summary">
@@ -259,6 +247,30 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
   </div>
 
   <div class="results" id="results"></div>
+
+  <div class="stage-head" id="stage2Head" hidden><span class="num">2</span><h3>Chèn watermark <span class="mini">— đóng dấu lên ảnh (tuỳ chọn)</span></h3></div>
+  <section class="wm-section" id="wmSection" hidden>
+    <label class="chk"><input type="checkbox" id="wmOn"> <span>Bật watermark chữ lên ảnh</span></label>
+    <div class="wm-panel" id="wmPanel" hidden>
+      <input type="text" class="wm-text" id="wmText" placeholder="© Tên của bạn" maxlength="60">
+      <div class="seg" id="wmMode">
+        <button data-v="single" class="on">1 vị trí</button>
+        <button data-v="tile">Lặp kín ⤢</button>
+      </div>
+      <div class="wm-grid" id="wmGrid" title="Vị trí watermark">
+        <button data-p="tl" aria-label="trên trái"></button><button data-p="tc" aria-label="trên giữa"></button><button data-p="tr" aria-label="trên phải"></button>
+        <button data-p="ml" aria-label="giữa trái"></button><button data-p="mc" aria-label="chính giữa"></button><button data-p="mr" aria-label="giữa phải"></button>
+        <button data-p="bl" aria-label="dưới trái"></button><button data-p="bc" aria-label="dưới giữa"></button><button data-p="br" class="on" aria-label="dưới phải"></button>
+      </div>
+      <div class="seg" id="wmColor">
+        <button data-v="light" class="on">Trắng</button>
+        <button data-v="dark">Đen</button>
+        <button data-v="brand">Hồng</button>
+      </div>
+      <div class="rangewrap"><span class="mini">Độ mờ</span><input type="range" id="wmOpacity" min="5" max="100" value="35"><span class="val mono" id="wmOpacityV">35%</span></div>
+      <div class="rangewrap"><span class="mini">Cỡ</span><input type="range" id="wmSize" min="2" max="14" value="5"><span class="val mono" id="wmSizeV">5%</span></div>
+    </div>
+  </section>
 </div>
 
 <!-- Compare modal -->
@@ -443,6 +455,9 @@ function accept(files){
   if(msgs.length)showNotice(msgs.join(' '));
   if(!okList.length)return;
   $('#controls').classList.add('show');
+  $('#stage1Head').hidden=false;
+  $('#stage2Head').hidden=false;
+  $('#wmSection').hidden=false;
   okList.forEach(addItem);
   countHit(okList.length);   // thả ảnh vào là đếm (toàn cục)
   runQueue();
@@ -450,7 +465,7 @@ function accept(files){
 
 function addItem(file){
   const el=document.createElement('div');el.className='card working';
-  el.innerHTML=`<img class="thumb" alt="">
+  el.innerHTML=`<div class="card-head">
     <div class="meta"><div class="fn"></div>
       <div class="szline"><span class="orig"></span><span class="arrow">→</span><span class="proc"><span class="spin"></span></span></div></div>
     <div class="acts">
@@ -460,11 +475,13 @@ function addItem(file){
       <button class="icon-btn fv-btn" title="Lật dọc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3"/><path d="M20 16v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3"/><path d="M2 12h20"/></svg></button>
       <button class="icon-btn cmp-btn" title="So sánh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 8l-3 4 3 4M19 8l3 4-3 4"/></svg></button>
       <button class="icon-btn dl-btn" title="Tải"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M12 15l-4-4M12 15l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg></button>
-    </div>`;
+    </div>
+  </div>
+  <div class="preview"><img class="thumb" alt="" loading="lazy"></div>`;
   el.querySelector('.fn').textContent=file.name;
   el.querySelector('.orig').textContent=fmtBytes(file.size);
   results.appendChild(el);
-  const it={file,el,result:null,url:null,baseUrl:URL.createObjectURL(file),tf:{rot:0,flipH:false,flipV:false}};
+  const it={file,el,result:null,url:null,pending:true,baseUrl:URL.createObjectURL(file),tf:{rot:0,flipH:false,flipV:false}};
   el.querySelector('.thumb').src=it.baseUrl;
   items.push(it);
   el.querySelector('.cmp-btn').onclick=()=>openCompare(it);
@@ -475,13 +492,17 @@ function addItem(file){
   el.querySelector('.fv-btn').onclick=()=>{it.tf.flipV=!it.tf.flipV;reprocessOne(it);};
 }
 
-let running=false, queueDirty=false;
+let running=false;
 async function runQueue(){
-  if(running){queueDirty=true;return;}
+  if(running)return;
   running=true;
-  do{ queueDirty=false;
-    for(const it of items){ if(!it.result) await process(it); }
-  } while(queueDirty);
+  let any=true;
+  while(any){
+    any=false;
+    for(const it of items){
+      if(it.pending){ it.pending=false; any=true; await process(it); }
+    }
+  }
   running=false;updateSummary();
 }
 async function process(it){
@@ -568,13 +589,13 @@ $$('[data-close]').forEach(e=>e.onclick=()=>modal.classList.remove('show'));
 })();
 
 /* ---------- Re-optimize on control change ---------- */
-$('#reoptimize').onclick=()=>{items.forEach(i=>{i.result=null;i.el.querySelector('.proc').innerHTML='<span class="spin"></span>';});runQueue();};
+$('#reoptimize').onclick=()=>{items.forEach(i=>{i.pending=true;i.el.querySelector('.proc').innerHTML='<span class="spin"></span>';});runQueue();};
 $('#fmt').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$$('#fmt button').forEach(x=>x.classList.remove('on'));b.classList.add('on');});
 $('#q').addEventListener('input',()=>$('#qv').textContent=$('#q').value);
 
 /* ---------- Xoay/lật 1 ảnh ---------- */
 function reprocessOne(it){
-  it.result=null;
+  it.pending=true;
   it.el.classList.add('working');
   it.el.querySelector('.proc').innerHTML='<span class="spin"></span>';
   runQueue();
@@ -582,7 +603,7 @@ function reprocessOne(it){
 
 /* ---------- Watermark controls ---------- */
 const wmPanel=$('#wmPanel');
-function wmRerunAll(){ if(!items.length)return; items.forEach(i=>{i.result=null;i.el.querySelector('.proc').innerHTML='<span class="spin"></span>';}); runQueue(); }
+function wmRerunAll(){ if(!items.length)return; items.forEach(i=>{i.pending=true;i.el.querySelector('.proc').innerHTML='<span class="spin"></span>';}); runQueue(); }
 function wmSave(){ try{ localStorage.setItem('pixopt_wm', JSON.stringify(wmConfig())); }catch(e){} }
 function wmApply(){ wmSave(); if($('#wmOn').checked) wmRerunAll(); }
 function segPick(sel,b){ $$(sel+' button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); }
