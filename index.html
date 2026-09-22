@@ -82,6 +82,11 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
 .drop .di svg{width:27px;height:27px}
 .drop b{font-size:17px;font-weight:600}
 .drop .hint{color:var(--faint);font-size:13.5px;margin-top:6px}
+/* thanh thêm ảnh gọn (sau khi đã có ảnh) */
+.drop.mini{margin-top:16px;padding:13px 18px;display:flex;align-items:center;justify-content:center;gap:10px}
+.drop.mini .di,.drop.mini .hint{display:none}
+.drop.mini b{font-size:14.5px;font-weight:600;color:var(--muted)}
+.drop.mini b::before{content:"＋ ";color:var(--brand);font-weight:700}
 
 /* Controls */
 .controls{display:none;margin-top:18px;background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius);padding:16px 18px;gap:22px;flex-wrap:wrap;align-items:center}
@@ -121,6 +126,14 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
 .card .preview{width:100%;background:var(--surface-2);border:1px solid var(--hairline);border-radius:10px;min-height:110px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .card .preview img{max-width:100%;max-height:70vh;display:block;object-fit:contain}
 .card.working .preview{opacity:.55}
+/* Nút xem chất lượng: Gốc · Nén · WebP */
+.qbtns{display:flex;gap:8px;flex-wrap:wrap}
+.qbtn{display:flex;flex-direction:column;align-items:flex-start;gap:1px;border:1px solid var(--hairline-strong);background:var(--surface);border-radius:9px;padding:7px 13px;cursor:pointer;font-family:inherit;line-height:1.25;transition:.15s}
+.qbtn:hover{border-color:var(--brand)}
+.qbtn.on{border-color:var(--brand);background:var(--brand-soft)}
+.qbtn .ql{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.qbtn.on .ql{color:var(--brand)}
+.qbtn .qs{font-size:14px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
 .card .meta{flex:1;min-width:0}
 .card .fn{font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .szline{font-size:13px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -200,15 +213,9 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
   <div style="text-align:center;margin-top:12px"><button class="btn btn-ghost" id="sampleBtn">Chưa có ảnh? Thử ảnh mẫu →</button></div>
   <div class="notice" id="notice"></div>
 
+  <div class="results" id="results"></div>
+
   <div class="controls" id="controls">
-    <div class="ctl">
-      <label>Định dạng xuất</label>
-      <div class="seg" id="fmt">
-        <button data-v="auto" class="on">Tự động</button>
-        <button data-v="keep">Giữ gốc</button>
-        <button data-v="webp">WebP</button>
-      </div>
-    </div>
     <div class="ctl">
       <label>Chất lượng</label>
       <div class="rangewrap"><input type="range" id="q" min="40" max="95" value="75"><span class="val mono" id="qv">75</span></div>
@@ -231,8 +238,6 @@ h1,h2,h3{font-family:"Fraunces",Georgia,serif;letter-spacing:-.01em}
     </div>
     <button class="btn btn-light" id="dlAll"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M12 15l-4-4M12 15l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg> Tải tất cả (.zip)</button>
   </div>
-
-  <div class="results" id="results"></div>
 
   <div class="xlink">🔖 Cần <b>đóng dấu bản quyền / watermark</b> lên ảnh? Thử <a href="https://tools.vigdigital.com/pixmark/">PixMark</a> →</div>
 </div>
@@ -317,40 +322,32 @@ async function optimizeOne(file,opts,tf){
   const {imageData,w,h}=renderCanvas(bmp,opts,tf);
   const src=file.type;
   const q=opts.quality;
-  const candidates=[];
-
-  async function tryJpeg(){const e=await enc('jpeg');const buf=await e(imageData,{quality:q});candidates.push({buf,type:'image/jpeg',ext:'jpg'});}
-  async function tryWebp(){const e=await enc('webp');const buf=await e(imageData,{quality:q});candidates.push({buf,type:'image/webp',ext:'webp'});}
-  async function tryPng(){
-    // Vẽ lại PNG (lossless, tự strip metadata). PNG nén mạnh nhất = chuyển WebP (xem 'auto').
-    const blob=await new Promise(r=>{
-      const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').putImageData(imageData,0,0);c.toBlob(r,'image/png');
-    });
-    candidates.push({buf:await blob.arrayBuffer(),type:'image/png',ext:'png'});
-  }
-
-  const fmt=opts.format;
-  if(fmt==='webp'){await tryWebp();}
-  else if(fmt==='keep'){
-    if(src==='image/png') await tryPng();
-    else if(src==='image/webp') await tryWebp();
-    else await tryJpeg();
-  }else{ // auto: thử webp + định dạng gốc, chọn nhỏ nhất
-    await tryWebp();
-    if(src==='image/png') await tryPng(); else await tryJpeg();
-  }
-
-  // chọn ứng viên nhỏ nhất
-  let best=candidates.sort((a,b)=>a.buf.byteLength-b.buf.byteLength)[0];
-  // không phình to: nếu output ≥ gốc VÀ không xoay/lật → giữ gốc.
-  // Có xoay/lật thì phải dùng ảnh đã render (gốc chưa xoay).
-  const origBuf=await file.arrayBuffer();
   const edited=tf&&(((tf.rot||0)%360)!==0||tf.flipH||tf.flipV);
-  if(!edited && best.buf.byteLength>=origBuf.byteLength){
-    best={buf:origBuf,type:src,ext:(src.split('/')[1]||'img').replace('jpeg','jpg'),kept:true};
+
+  // WebP luôn có
+  const webpBuf=await (await enc('webp'))(imageData,{quality:q});
+  // Bản "định dạng gốc" đã nén (JPG/PNG). Ảnh WebP gốc thì bỏ qua (Gốc đã là WebP).
+  let minVar=null;
+  if(src==='image/jpeg'){
+    const b=await (await enc('jpeg'))(imageData,{quality:q});
+    minVar={buf:b,type:'image/jpeg',ext:'jpg'};
+  }else if(src==='image/png'){
+    const blob=await new Promise(r=>{const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').putImageData(imageData,0,0);c.toBlob(r,'image/png');});
+    minVar={buf:await blob.arrayBuffer(),type:'image/png',ext:'png'};
   }
-  return {best,origSize:origBuf.byteLength,w,h,srcType:src};
+
+  const variants=[{key:'orig',label:'Gốc',size:file.size,type:src,ext:(src.split('/')[1]||'img').replace('jpeg','jpg'),isOrig:true}];
+  if(minVar) variants.push({key:'min',label:'Nén',buf:minVar.buf,type:minVar.type,ext:minVar.ext,size:minVar.buf.byteLength});
+  variants.push({key:'webp',label:'WebP',buf:webpBuf,type:'image/webp',ext:'webp',size:webpBuf.byteLength});
+
+  // mặc định = bản nén nhỏ nhất; nếu không xoay/lật mà bản nén vẫn ≥ gốc → mặc định Gốc
+  const compressed=variants.filter(v=>!v.isOrig).sort((a,b)=>a.size-b.size);
+  let active=compressed[0].key;
+  if(!edited && compressed[0].size>=file.size) active='orig';
+
+  return {variants,active,origSize:file.size,w,h,srcType:src,edited};
 }
+function activeVar(it){ return it.variants && it.variants.find(v=>v.key===it.active); }
 
 /* ---------- State + UI ---------- */
 let items=[]; // {file,el,result,url,baseUrl}
@@ -358,7 +355,6 @@ const results=$('#results');
 
 function opts(){
   return {
-    format:$('#fmt .on').dataset.v,
     quality:+$('#q').value,
     resize:$('#resize').checked,
     maxw:+$('#maxw').value||2000,
@@ -381,6 +377,12 @@ function accept(files){
   if(msgs.length)showNotice(msgs.join(' '));
   if(!okList.length)return;
   $('#controls').classList.add('show');
+  const drop=$('#drop');
+  if(!drop.classList.contains('mini')){
+    drop.classList.add('mini');
+    drop.querySelector('b').textContent='Kéo thả hoặc bấm để thêm ảnh';
+    const sw=$('#sampleBtn'); if(sw&&sw.parentElement) sw.parentElement.hidden=true;
+  }
   okList.forEach(addItem);
   countHit(okList.length);   // thả ảnh vào là đếm (toàn cục)
   runQueue();
@@ -400,7 +402,8 @@ function addItem(file){
       <button class="icon-btn dl-btn" title="Tải"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M12 15l-4-4M12 15l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg></button>
     </div>
   </div>
-  <div class="preview"><img class="thumb" alt="" loading="lazy"></div>`;
+  <div class="preview"><img class="thumb" alt="" loading="lazy"></div>
+  <div class="qbtns" hidden></div>`;
   el.querySelector('.fn').textContent=file.name;
   el.querySelector('.orig').textContent=fmtBytes(file.size);
   results.appendChild(el);
@@ -433,26 +436,54 @@ async function process(it){
   const proc=it.el.querySelector('.proc');
   try{
     const r=await optimizeOne(it.file,opts(),it.tf);
-    it.result=r;
-    if(it.url)URL.revokeObjectURL(it.url);
-    it.blob=new Blob([r.best.buf],{type:r.best.type});
-    it.url=URL.createObjectURL(it.blob);
-    it.el.querySelector('.thumb').src=it.url;
-    const pct=Math.max(0,Math.round((1-r.best.buf.byteLength/r.origSize)*100));
-    const fmtChanged=r.best.type!==r.srcType;
-    proc.innerHTML=`<span class="newsz">${fmtBytes(r.best.buf.byteLength)}</span>`
-      +(r.best.kept?` <span class="badge same">đã tối ưu sẵn</span>`:` <span class="badge save">-${pct}%</span>`)
-      +(fmtChanged?` <span class="badge fmt">${r.best.ext.toUpperCase()}</span>`:'');
+    // thu hồi url biến thể cũ (trừ Gốc = baseUrl)
+    if(it.variants) it.variants.forEach(v=>{ if(v.url && !v.isOrig) URL.revokeObjectURL(v.url); });
+    // dựng blob + url cho từng biến thể
+    r.variants.forEach(v=>{
+      if(v.isOrig){ v.blob=it.file; v.url=it.baseUrl; }
+      else { v.blob=new Blob([v.buf],{type:v.type}); v.url=URL.createObjectURL(v.blob); v.buf=null; }
+    });
+    it.result=r; it.variants=r.variants;
+    // giữ lựa chọn cũ nếu còn hợp lệ, không thì dùng mặc định
+    it.active = (it.active && r.variants.some(v=>v.key===it.active)) ? it.active : r.active;
+    renderVariants(it);
+    setActive(it,it.active);
   }catch(e){
     proc.innerHTML=`<span class="err-row">Lỗi: ${e.message||e}</span>`;
   }
   it.el.classList.remove('working');
 }
+function renderVariants(it){
+  const box=it.el.querySelector('.qbtns');
+  box.innerHTML='';
+  it.variants.forEach(v=>{
+    const b=document.createElement('button');
+    b.className='qbtn'+(v.key===it.active?' on':'');
+    b.dataset.k=v.key;
+    b.innerHTML=`<span class="ql">${v.label}</span><span class="qs">${fmtBytes(v.size)}</span>`;
+    b.onclick=()=>setActive(it,v.key);
+    box.appendChild(b);
+  });
+  box.hidden = it.variants.length<2;
+}
+function setActive(it,key){
+  const v=(it.variants||[]).find(x=>x.key===key); if(!v)return;
+  it.active=key;
+  it.el.querySelector('.thumb').src=v.url;
+  const proc=it.el.querySelector('.proc');
+  const pct=Math.max(0,Math.round((1-v.size/it.result.origSize)*100));
+  const changed=v.type!==it.result.srcType && !v.isOrig;
+  proc.innerHTML=`<span class="newsz">${fmtBytes(v.size)}</span>`
+    +(v.isOrig?` <span class="badge same">bản gốc</span>`:` <span class="badge save">-${pct}%</span>`)
+    +(changed?` <span class="badge fmt">${v.ext.toUpperCase()}</span>`:'');
+  it.el.querySelectorAll('.qbtns .qbtn').forEach(b=>b.classList.toggle('on',b.dataset.k===key));
+  updateSummary();
+}
 
 function updateSummary(){
-  const done=items.filter(i=>i.result);
+  const done=items.filter(i=>i.result && activeVar(i));
   if(!done.length){$('#summary').classList.remove('show');return;}
-  let o=0,n=0;done.forEach(i=>{o+=i.result.origSize;n+=i.result.best.buf.byteLength;});
+  let o=0,n=0;done.forEach(i=>{o+=i.result.origSize;n+=activeVar(i).size;});
   $('#sSaved').textContent=fmtBytes(Math.max(0,o-n));
   $('#sPct').textContent=(o?Math.round((1-n/o)*100):0)+'%';
   $('#sCount').textContent=done.length;
@@ -465,11 +496,11 @@ function trackDownload(method,format,count){
   try{ if(typeof gtag==='function') gtag('event','download',{method:method,file_format:format,image_count:count||1}); }catch(e){}
 }
 function download(it){
-  if(!it.result)return;
-  const a=document.createElement('a');a.href=it.url;
-  a.download=baseName(it.file.name)+'.'+it.result.best.ext;
+  const v=activeVar(it); if(!v)return;
+  const a=document.createElement('a');a.href=v.url;
+  a.download=baseName(it.file.name)+'.'+v.ext;
   document.body.appendChild(a);a.click();a.remove();
-  trackDownload('single',it.result.best.ext,1);
+  trackDownload('single',v.ext,1);
 }
 $('#dlAll').onclick=async()=>{
   const done=items.filter(i=>i.result);if(!done.length)return;
@@ -478,9 +509,10 @@ $('#dlAll').onclick=async()=>{
     if(!window.JSZip){await new Promise((res,rej)=>{const s=document.createElement('script');s.src='assets/jszip.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
     const zip=new window.JSZip();const used={};
     for(const it of done){
-      let name=baseName(it.file.name)+'.'+it.result.best.ext;
-      if(used[name]){name=baseName(it.file.name)+'-'+(used[name]++)+'.'+it.result.best.ext;}else used[name]=1;
-      zip.file(name,it.blob);
+      const v=activeVar(it); if(!v)continue;
+      let name=baseName(it.file.name)+'.'+v.ext;
+      if(used[name]){name=baseName(it.file.name)+'-'+(used[name]++)+'.'+v.ext;}else used[name]=1;
+      zip.file(name,v.blob);
     }
     const blob=await zip.generateAsync({type:'blob'});
     const url=URL.createObjectURL(blob);
@@ -495,9 +527,9 @@ $('#dlAll').onclick=async()=>{
 /* ---------- Compare slider ---------- */
 const modal=$('#modal');
 function openCompare(it){
-  if(!it.result)return;
-  $('#cmpBase').src=it.baseUrl;$('#cmpAfter').src=it.url;
-  $('#cmpSub').textContent=`${it.file.name} · ${fmtBytes(it.result.origSize)} → ${fmtBytes(it.result.best.buf.byteLength)}`;
+  const v=activeVar(it); if(!v)return;
+  $('#cmpBase').src=it.baseUrl;$('#cmpAfter').src=v.url;
+  $('#cmpSub').textContent=`${it.file.name} · ${fmtBytes(it.result.origSize)} → ${fmtBytes(v.size)} (${v.label})`;
   modal.classList.add('show');setHandle(50);
 }
 function setHandle(pct){$('#cmpHandle').style.left=pct+'%';$('#cmpAfterWrap').style.width=pct+'%';
@@ -513,7 +545,6 @@ $$('[data-close]').forEach(e=>e.onclick=()=>modal.classList.remove('show'));
 
 /* ---------- Re-optimize on control change ---------- */
 $('#reoptimize').onclick=()=>{items.forEach(i=>{i.pending=true;i.el.querySelector('.proc').innerHTML='<span class="spin"></span>';});runQueue();};
-$('#fmt').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$$('#fmt button').forEach(x=>x.classList.remove('on'));b.classList.add('on');});
 $('#q').addEventListener('input',()=>$('#qv').textContent=$('#q').value);
 
 /* ---------- Xoay/lật 1 ảnh ---------- */
